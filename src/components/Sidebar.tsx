@@ -176,11 +176,15 @@ export function Sidebar({ conversations, selectedId, onSelect, onDelete, onRenam
                   <span className="text-xs text-gray-400 dark:text-gray-500">
                     {conv.messages.length} messages
                   </span>
-                  {conv.date && (
-                    <span className="text-xs text-gray-400 dark:text-gray-500">
-                      • {formatDate(conv.date)}
-                    </span>
-                  )}
+                  {(() => {
+                    const lastMsg = conv.messages[conv.messages.length - 1];
+                    const dateStr = lastMsg?.timestamp || conv.date;
+                    return dateStr ? (
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        • {formatDate(dateStr)}
+                      </span>
+                    ) : null;
+                  })()}
                 </div>
               </div>
             </div>
