@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getAllConversations, deleteConversation, renameConversation } from './lib/db';
+import { getAllConversations, deleteConversation, renameConversation, renameParticipant } from './lib/db';
 import { applyTheme, getStoredTheme } from './lib/theme';
 import type { Conversation } from './types';
 import { Sidebar } from './components/Sidebar';
@@ -44,6 +44,15 @@ export default function App() {
   const handleRename = useCallback(
     async (id: string, newTitle: string) => {
       await renameConversation(id, newTitle);
+      const convs = await getAllConversations();
+      setConversations(convs);
+    },
+    []
+  );
+
+  const handleRenameParticipant = useCallback(
+    async (id: string, oldName: string, newName: string) => {
+      await renameParticipant(id, oldName, newName);
       const convs = await getAllConversations();
       setConversations(convs);
     },
@@ -98,7 +107,7 @@ export default function App() {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         {selected ? (
-          <ChatView conversation={selected} />
+          <ChatView conversation={selected} onRenameParticipant={handleRenameParticipant} />
         ) : (
           <EmptyState onUploadComplete={handleUploadComplete} />
         )}

@@ -47,6 +47,24 @@ export async function renameConversation(id: string, newTitle: string): Promise<
   }
 }
 
+export async function renameParticipant(
+  id: string,
+  oldName: string,
+  newName: string
+): Promise<void> {
+  const db = await getDB();
+  const conv = await db.get(STORE_NAME, id);
+  if (!conv) return;
+  conv.participants = conv.participants.map((p: string) =>
+    p === oldName ? newName : p
+  );
+  conv.messages = conv.messages.map((m: { sender: string }) => ({
+    ...m,
+    sender: m.sender === oldName ? newName : m.sender,
+  }));
+  await db.put(STORE_NAME, conv);
+}
+
 export async function searchConversations(query: string): Promise<Conversation[]> {
   const all = await getAllConversations();
   const q = query.toLowerCase();
