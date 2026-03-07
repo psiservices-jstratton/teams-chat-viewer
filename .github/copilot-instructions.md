@@ -58,8 +58,13 @@ src/
 
 ## Common Tasks
 
+### IndexedDB compatibility
+- Users have existing conversations stored in IndexedDB. Any schema change (fields in `Conversation`/`Message`, object store structure, `DB_VERSION` bump) **must** be backwards-compatible with already-stored data.
+- If a breaking change is unavoidable, add a migration in the `upgrade` callback in `db.ts` that transforms existing records to the new format.
+- Never ship a change that would cause stored conversations to fail to load or silently lose data.
+
 ### Adding a new feature
-1. If it involves stored data, update `types.ts` and `db.ts`
+1. If it involves stored data, update `types.ts` and `db.ts` (see IndexedDB compatibility above)
 2. Create or modify components in `src/components/`
 3. Wire into `App.tsx` if it needs app-level state
 4. Run `npm run build` to verify TypeScript + Vite build passes

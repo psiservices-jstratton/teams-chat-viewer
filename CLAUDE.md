@@ -29,6 +29,10 @@ No test framework is configured.
 
 Tailwind CSS v4 — uses `@custom-variant` in `index.css` for dark mode (NOT `tailwind.config.js`). Dark mode toggled via `.dark` class on `<html>`. All components must include `dark:` variants.
 
+## IndexedDB Compatibility
+
+Users have existing data stored in their browser's IndexedDB. Any change to the schema (adding/removing/renaming fields in `Conversation` or `Message`, changing the object store structure, or bumping `DB_VERSION`) must be backwards-compatible with data already stored. If a breaking change is unavoidable, implement a migration in the `upgrade` callback in `db.ts` that transforms existing records to the new format. Never ship a change that would cause existing stored conversations to fail to load or silently lose data.
+
 ## Deployment
 
 GitHub Pages via GitHub Actions on push to `main`. Vite `base` is set to `/teams-chat-viewer/` in `vite.config.ts`.
