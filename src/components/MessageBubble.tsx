@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import type { Message } from '../types';
+import { ImageLightbox } from './ImageLightbox';
 
 interface MessageBubbleProps {
   message: Message;
@@ -24,6 +26,7 @@ function formatTime(iso: string): string {
 }
 
 export function MessageBubble({ message, senderColor, prevSender }: MessageBubbleProps) {
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const showHeader = message.sender !== prevSender;
 
   return (
@@ -58,12 +61,25 @@ export function MessageBubble({ message, senderColor, prevSender }: MessageBubbl
           </div>
         )}
 
-        <div className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed
-          [&_img]:max-w-md [&_img]:rounded-lg [&_img]:my-1 [&_img]:border [&_img]:border-gray-200 [&_img]:dark:border-gray-700
-          [&_h1]:text-base [&_h1]:font-bold [&_h1]:my-1 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:my-1
-          [&_.mention]:text-blue-500 [&_.mention]:font-medium">
+        <div
+          className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed
+            [&_img]:max-w-md [&_img]:rounded-lg [&_img]:my-1 [&_img]:border [&_img]:border-gray-200 [&_img]:dark:border-gray-700 [&_img]:cursor-pointer
+            [&_h1]:text-base [&_h1]:font-bold [&_h1]:my-1 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:my-1
+            [&_.mention]:text-blue-500 [&_.mention]:font-medium"
+          onClick={e => {
+            const target = e.target as HTMLElement;
+            if (target.tagName === 'IMG') {
+              setLightboxSrc((target as HTMLImageElement).src);
+            }
+          }}
+        >
+          {/* Content is parsed from user-uploaded local HTML files, not from external sources */}
           <span dangerouslySetInnerHTML={{ __html: message.content }} />
         </div>
+
+        {lightboxSrc && (
+          <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+        )}
 
         {message.links.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1.5">
