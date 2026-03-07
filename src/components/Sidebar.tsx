@@ -71,7 +71,7 @@ export function Sidebar({ conversations, selectedId, onSelect, onDelete, onRenam
     : conversations;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col min-h-0 flex-1">
       {/* Search */}
       <div className="p-3 border-b border-gray-200 dark:border-gray-700">
         <div className="relative">
