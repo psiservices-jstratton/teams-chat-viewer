@@ -90,7 +90,7 @@ export function parseHTML(html: string, filename: string): Conversation {
       if (href) links.push(href);
     });
 
-    // Build content: clone, remove metadata, remove images
+    // Build content: clone, remove metadata, handle special elements
     const clone = main.cloneNode(true) as HTMLElement;
     const firstP = clone.querySelector('p');
     if (
@@ -99,7 +99,25 @@ export function parseHTML(html: string, filename: string): Conversation {
     ) {
       firstP.remove();
     }
-    clone.querySelectorAll('img').forEach(img => img.remove());
+
+    // Convert <emoji> tags to their unicode alt text
+    clone.querySelectorAll('emoji').forEach(emoji => {
+      const alt = emoji.getAttribute('alt');
+      if (alt) {
+        emoji.replaceWith(doc.createTextNode(alt));
+      } else {
+        emoji.remove();
+      }
+    });
+
+    // Remove only placeholder images (BinaryTree icons used for link previews)
+    // Keep inline/base64 images and other meaningful images
+    clone.querySelectorAll('img').forEach(img => {
+      const src = img.getAttribute('src') || '';
+      if (src.includes('binarytree.com') || src.includes('help.binarytree.com')) {
+        img.remove();
+      }
+    });
 
     let content = clone.innerHTML
       .replace(/<p>\s*<\/p>/g, '')
@@ -108,7 +126,18 @@ export function parseHTML(html: string, filename: string): Conversation {
     if (!content) {
       const textClone = main.cloneNode(true) as HTMLElement;
       textClone.querySelectorAll('.pFrom, .pDate').forEach(el => el.remove());
-      textClone.querySelectorAll('img').forEach(el => el.remove());
+      textClone.querySelectorAll('emoji').forEach(emoji => {
+        const alt = emoji.getAttribute('alt');
+        if (alt) {
+          emoji.replaceWith(doc.createTextNode(alt));
+        } else {
+          emoji.remove();
+        }
+      });
+      textClone.querySelectorAll('img').forEach(img => {
+        const src = img.getAttribute('src') || '';
+        if (src.includes('binarytree.com')) img.remove();
+      });
       content = textClone.innerHTML.trim();
     }
 
