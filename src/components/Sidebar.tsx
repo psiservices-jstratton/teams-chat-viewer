@@ -1,11 +1,12 @@
 import type { Conversation } from '../types';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface SidebarProps {
   conversations: Conversation[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
+  onRename: (id: string, newTitle: string) => void;
 }
 
 function formatDate(dateStr: string): string {
@@ -39,8 +40,27 @@ function getColor(str: string): string {
   return COLORS[Math.abs(hash) % COLORS.length];
 }
 
-export function Sidebar({ conversations, selectedId, onSelect, onDelete }: SidebarProps) {
+export function Sidebar({ conversations, selectedId, onSelect, onDelete, onRename }: SidebarProps) {
   const [search, setSearch] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editingId) editInputRef.current?.focus();
+  }, [editingId]);
+
+  const startRename = (id: string, currentTitle: string) => {
+    setEditingId(id);
+    setEditValue(currentTitle);
+  };
+
+  const commitRename = () => {
+    if (editingId && editValue.trim()) {
+      onRename(editingId, editValue.trim());
+    }
+    setEditingId(null);
+  };
 
   const filtered = search
     ? conversations.filter(
@@ -95,21 +115,58 @@ export function Sidebar({ conversations, selectedId, onSelect, onDelete }: Sideb
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">
-                    {conv.title}
-                  </span>
-                  <button
-                    onClick={e => {
-                      e.stopPropagation();
-                      onDelete(conv.id);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-500 transition-all"
-                    title="Delete conversation"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                  {editingId === conv.id ? (
+                    <input
+                      ref={editInputRef}
+                      value={editValue}
+                      onChange={e => setEditValue(e.target.value)}
+                      onBlur={commitRename}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') commitRename();
+                        if (e.key === 'Escape') setEditingId(null);
+                      }}
+                      className="font-medium text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800
+                        border border-blue-400 rounded px-1 py-0 w-full mr-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      onClick={e => e.stopPropagation()}
+                    />
+                  ) : (
+                    <span
+                      className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate"
+                      onDoubleClick={e => {
+                        e.stopPropagation();
+                        startRename(conv.id, conv.title);
+                      }}
+                      title="Double-click to rename"
+                    >
+                      {conv.title}
+                    </span>
+                  )}
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        startRename(conv.id, conv.title);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-400 hover:text-blue-500 transition-all"
+                      title="Rename conversation"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        onDelete(conv.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-500 transition-all"
+                      title="Delete conversation"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
                   {conv.participants.slice(0, 3).join(', ')}

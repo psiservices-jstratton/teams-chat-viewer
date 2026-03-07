@@ -38,6 +38,15 @@ export async function deleteConversation(id: string): Promise<void> {
   await db.delete(STORE_NAME, id);
 }
 
+export async function renameConversation(id: string, newTitle: string): Promise<void> {
+  const db = await getDB();
+  const conv = await db.get(STORE_NAME, id);
+  if (conv) {
+    conv.title = newTitle;
+    await db.put(STORE_NAME, conv);
+  }
+}
+
 export async function searchConversations(query: string): Promise<Conversation[]> {
   const all = await getAllConversations();
   const q = query.toLowerCase();

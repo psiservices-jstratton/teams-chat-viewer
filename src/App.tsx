@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getAllConversations, deleteConversation } from './lib/db';
+import { getAllConversations, deleteConversation, renameConversation } from './lib/db';
 import { applyTheme, getStoredTheme } from './lib/theme';
 import type { Conversation } from './types';
 import { Sidebar } from './components/Sidebar';
@@ -41,6 +41,15 @@ export default function App() {
     [selectedId]
   );
 
+  const handleRename = useCallback(
+    async (id: string, newTitle: string) => {
+      await renameConversation(id, newTitle);
+      const convs = await getAllConversations();
+      setConversations(convs);
+    },
+    []
+  );
+
   const selected = conversations.find(c => c.id === selectedId) || null;
 
   return (
@@ -72,6 +81,7 @@ export default function App() {
           selectedId={selectedId}
           onSelect={setSelectedId}
           onDelete={handleDelete}
+          onRename={handleRename}
         />
       </div>
 
