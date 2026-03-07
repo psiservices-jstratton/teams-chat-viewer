@@ -60,7 +60,8 @@ export function MessageBubble({ message, senderColor, prevSender }: MessageBubbl
 
         <div className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed
           [&_img]:max-w-md [&_img]:rounded-lg [&_img]:my-1 [&_img]:border [&_img]:border-gray-200 [&_img]:dark:border-gray-700
-          [&_h1]:text-base [&_h1]:font-bold [&_h1]:my-1 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:my-1">
+          [&_h1]:text-base [&_h1]:font-bold [&_h1]:my-1 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:my-1
+          [&_.mention]:text-blue-500 [&_.mention]:font-medium">
           <span dangerouslySetInnerHTML={{ __html: message.content }} />
         </div>
 

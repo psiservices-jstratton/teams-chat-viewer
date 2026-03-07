@@ -65,8 +65,17 @@ function parseDate(dateStr: string): string {
 export function parseHTML(html: string, filename: string): Conversation {
   const { title, participants, date, id } = parseFilename(filename);
 
+  // Pre-process custom/non-standard tags before DOM parsing
+  // Browser DOMParser may not handle custom elements consistently
+  const processedHtml = html
+    // Replace <emoji> tags with their unicode alt text
+    .replace(/<emoji[^>]*alt="([^"]*)"[^>]*><\/emoji>/gi, '$1')
+    .replace(/<emoji[^>]*\/>/gi, '')
+    // Replace <at> tags (Teams @mentions) with styled spans
+    .replace(/<at[^>]*>(.*?)<\/at>/gi, '<span class="mention">@$1</span>');
+
   const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
+  const doc = parser.parseFromString(processedHtml, 'text/html');
   const posts = doc.querySelectorAll('.post');
 
   const senderSet = new Set<string>(participants);
@@ -100,16 +109,6 @@ export function parseHTML(html: string, filename: string): Conversation {
       firstP.remove();
     }
 
-    // Convert <emoji> tags to their unicode alt text
-    clone.querySelectorAll('emoji').forEach(emoji => {
-      const alt = emoji.getAttribute('alt');
-      if (alt) {
-        emoji.replaceWith(doc.createTextNode(alt));
-      } else {
-        emoji.remove();
-      }
-    });
-
     // Remove only placeholder images (BinaryTree icons used for link previews)
     // Keep inline/base64 images and other meaningful images
     clone.querySelectorAll('img').forEach(img => {
@@ -126,14 +125,6 @@ export function parseHTML(html: string, filename: string): Conversation {
     if (!content) {
       const textClone = main.cloneNode(true) as HTMLElement;
       textClone.querySelectorAll('.pFrom, .pDate').forEach(el => el.remove());
-      textClone.querySelectorAll('emoji').forEach(emoji => {
-        const alt = emoji.getAttribute('alt');
-        if (alt) {
-          emoji.replaceWith(doc.createTextNode(alt));
-        } else {
-          emoji.remove();
-        }
-      });
       textClone.querySelectorAll('img').forEach(img => {
         const src = img.getAttribute('src') || '';
         if (src.includes('binarytree.com')) img.remove();
