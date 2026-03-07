@@ -74,3 +74,46 @@ export async function searchConversations(query: string): Promise<Conversation[]
       c.participants.some(p => p.toLowerCase().includes(q))
   );
 }
+
+export async function pinConversation(id: string): Promise<void> {
+  const db = await getDB();
+  const all = await db.getAll(STORE_NAME);
+  const maxOrder = all.reduce((max, c) => Math.max(max, c.pinOrder ?? -1), -1);
+  const conv = await db.get(STORE_NAME, id);
+  if (conv) {
+    conv.isPinned = true;
+    conv.pinOrder = maxOrder + 1;
+    await db.put(STORE_NAME, conv);
+  }
+}
+
+export async function unpinConversation(id: string): Promise<void> {
+  const db = await getDB();
+  const conv = await db.get(STORE_NAME, id);
+  if (!conv) return;
+  const removedOrder = conv.pinOrder ?? 0;
+  conv.isPinned = false;
+  conv.pinOrder = undefined;
+  await db.put(STORE_NAME, conv);
+
+  // Re-normalize remaining pinned orders
+  const all = await db.getAll(STORE_NAME);
+  const pinned = all
+    .filter(c => c.isPinned && c.id !== id && (c.pinOrder ?? 0) > removedOrder)
+    .sort((a, b) => (a.pinOrder ?? 0) - (b.pinOrder ?? 0));
+  for (const c of pinned) {
+    c.pinOrder = (c.pinOrder ?? 0) - 1;
+    await db.put(STORE_NAME, c);
+  }
+}
+
+export async function reorderPinnedConversations(orderedIds: string[]): Promise<void> {
+  const db = await getDB();
+  for (let i = 0; i < orderedIds.length; i++) {
+    const conv = await db.get(STORE_NAME, orderedIds[i]);
+    if (conv && conv.isPinned) {
+      conv.pinOrder = i;
+      await db.put(STORE_NAME, conv);
+    }
+  }
+}

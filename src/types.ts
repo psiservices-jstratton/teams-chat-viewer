@@ -12,4 +12,6 @@ export interface Conversation {
   date: string;
   messages: Message[];
   importedAt: number;
+  isPinned?: boolean;
+  pinOrder?: number;
 }

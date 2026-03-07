@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getAllConversations, deleteConversation, renameConversation, renameParticipant } from './lib/db';
+import { getAllConversations, deleteConversation, renameConversation, renameParticipant, pinConversation, unpinConversation, reorderPinnedConversations } from './lib/db';
 import { applyTheme, getStoredTheme } from './lib/theme';
 import type { Conversation } from './types';
 import { Sidebar } from './components/Sidebar';
@@ -59,6 +59,24 @@ export default function App() {
     []
   );
 
+  const handlePin = useCallback(async (id: string) => {
+    await pinConversation(id);
+    const convs = await getAllConversations();
+    setConversations(convs);
+  }, []);
+
+  const handleUnpin = useCallback(async (id: string) => {
+    await unpinConversation(id);
+    const convs = await getAllConversations();
+    setConversations(convs);
+  }, []);
+
+  const handleReorderPinned = useCallback(async (orderedIds: string[]) => {
+    await reorderPinnedConversations(orderedIds);
+    const convs = await getAllConversations();
+    setConversations(convs);
+  }, []);
+
   const selected = conversations.find(c => c.id === selectedId) || null;
 
   return (
@@ -91,6 +109,9 @@ export default function App() {
           onSelect={setSelectedId}
           onDelete={handleDelete}
           onRename={handleRename}
+          onPin={handlePin}
+          onUnpin={handleUnpin}
+          onReorderPinned={handleReorderPinned}
         />
       </div>
 
