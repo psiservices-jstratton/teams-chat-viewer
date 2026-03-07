@@ -1,73 +1,38 @@
-# React + TypeScript + Vite
+# Teams Chat Viewer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A client-side web app for browsing archived Microsoft Teams chat exports in a familiar Slack/Teams-like interface.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Drag & drop upload** - Import HTML chat files exported from SharePoint
+- **Persistent storage** - Conversations stored in your browser's IndexedDB (survives refreshes)
+- **Chat UI** - Slack/Teams-style message bubbles with sender colors, timestamps, and clickable links
+- **Search & filter** - Find conversations by title or participant name
+- **Dark / Light theme** - Toggle with persistence
 
-## React Compiler
+## Usage
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. Visit the deployed site (or run locally)
+2. Drag and drop your `*-ArchivedChat.html` files onto the upload area
+3. Browse your conversations in the sidebar and click to view
 
-## Expanding the ESLint configuration
+## Development
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Deployment
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+This app is deployed automatically to GitHub Pages via GitHub Actions on every push to `main`.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+**To set up on your own repo:**
+1. Push this repo to GitHub
+2. Go to **Settings > Pages > Source** and select **GitHub Actions**
+3. Push a commit (or manually trigger the workflow) - the site will be live at:
+   `https://<your-username>.github.io/teams-chat-viewer/`
+
+## Tech Stack
+
+React - TypeScript - Vite - Tailwind CSS - IndexedDB (via idb)
