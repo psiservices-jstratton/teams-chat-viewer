@@ -242,7 +242,13 @@ export function highlightCodeBlocks(html: string): string {
         } catch {
           highlighted = escapeHtml(seg.content);
         }
-        return `<pre class="code-block"><code class="hljs language-${lang}">${highlighted}</code></pre>`;
+        const lineCount = seg.content.split('\n').length;
+        const pre = `<pre class="code-block"><code class="hljs language-${lang}">${highlighted}</code></pre>`;
+        if (lineCount >= 4) {
+          const langLabel = lang === 'plaintext' ? 'Code' : lang.toUpperCase();
+          return `<details class="code-collapsible"><summary class="code-summary">${langLabel} — ${lineCount} lines</summary>${pre}</details>`;
+        }
+        return pre;
       } else {
         // Preserve line breaks in text segments
         return seg.content

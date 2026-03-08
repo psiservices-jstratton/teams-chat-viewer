@@ -37,6 +37,66 @@ pre.code-block {
   border-color: #334155;
 }
 
+/* Collapsible code blocks */
+details.code-collapsible {
+  margin: 0.5rem 0;
+  border-radius: 0.5rem;
+  border: 1px solid #cbd5e1;
+  overflow: hidden;
+}
+
+.dark details.code-collapsible {
+  border-color: #334155;
+}
+
+summary.code-summary {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  color: #64748b;
+  background: #f8fafc;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+summary.code-summary::before {
+  content: '▶';
+  font-size: 0.625rem;
+  transition: transform 0.15s ease;
+}
+
+details.code-collapsible[open] > summary.code-summary::before {
+  transform: rotate(90deg);
+}
+
+summary.code-summary:hover {
+  background: #f1f5f9;
+}
+
+.dark summary.code-summary {
+  color: #94a3b8;
+  background: #1e293b;
+}
+
+.dark summary.code-summary:hover {
+  background: #0f172a;
+}
+
+details.code-collapsible > pre.code-block {
+  margin: 0;
+  border: none;
+  border-top: 1px solid #cbd5e1;
+  border-radius: 0;
+}
+
+.dark details.code-collapsible > pre.code-block {
+  border-top-color: #334155;
+}
+
 pre.code-block code {
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   white-space: pre;

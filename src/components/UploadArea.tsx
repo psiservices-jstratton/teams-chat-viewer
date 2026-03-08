@@ -1,7 +1,14 @@
 import { useCallback, useState, useRef } from 'react';
 import { parseHTML } from '../lib/parser';
-import { addConversation } from '../lib/db';
+import { addConversation, getConversation } from '../lib/db';
+import { DuplicateDialog } from './DuplicateDialog';
 import type { Conversation } from '../types';
+
+interface DuplicatePrompt {
+  existing: Conversation;
+  incoming: Conversation;
+  resolve: (action: 'replace' | 'skip') => void;
+}
 
 interface UploadAreaProps {
   onUploadComplete: (conversations: Conversation[]) => void;
@@ -11,6 +18,7 @@ interface UploadAreaProps {
 export function UploadArea({ onUploadComplete, compact }: UploadAreaProps) {
   const [dragging, setDragging] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [duplicatePrompt, setDuplicatePrompt] = useState<DuplicatePrompt | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processFiles = useCallback(
@@ -26,11 +34,26 @@ export function UploadArea({ onUploadComplete, compact }: UploadAreaProps) {
 
       setStatus(`Processing ${htmlFiles.length} file(s)...`);
       const results: Conversation[] = [];
+      let skipped = 0;
 
       for (const file of htmlFiles) {
         try {
           const text = await file.text();
           const conversation = parseHTML(text, file.name);
+
+          const existing = await getConversation(conversation.id);
+          if (existing) {
+            const action = await new Promise<'replace' | 'skip'>(resolve => {
+              setDuplicatePrompt({ existing, incoming: conversation, resolve });
+            });
+            setDuplicatePrompt(null);
+
+            if (action === 'skip') {
+              skipped++;
+              continue;
+            }
+          }
+
           await addConversation(conversation);
           results.push(conversation);
         } catch (e) {
@@ -38,7 +61,10 @@ export function UploadArea({ onUploadComplete, compact }: UploadAreaProps) {
         }
       }
 
-      setStatus(`Imported ${results.length} conversation(s)`);
+      const parts: string[] = [];
+      if (results.length > 0) parts.push(`Imported ${results.length}`);
+      if (skipped > 0) parts.push(`Skipped ${skipped}`);
+      setStatus(parts.join(', ') || 'No conversations imported');
       setTimeout(() => setStatus(null), 3000);
       onUploadComplete(results);
     },
@@ -68,6 +94,15 @@ export function UploadArea({ onUploadComplete, compact }: UploadAreaProps) {
     e.target.value = '';
   };
 
+  const duplicateDialog = duplicatePrompt && (
+    <DuplicateDialog
+      existing={duplicatePrompt.existing}
+      incoming={duplicatePrompt.incoming}
+      onReplace={() => duplicatePrompt.resolve('replace')}
+      onSkip={() => duplicatePrompt.resolve('skip')}
+    />
+  );
+
   if (compact) {
     return (
       <div className="p-3 border-b border-gray-200 dark:border-gray-700">
@@ -92,48 +127,52 @@ export function UploadArea({ onUploadComplete, compact }: UploadAreaProps) {
           className="hidden"
           onChange={handleFileChange}
         />
+        {duplicateDialog}
       </div>
     );
   }
 
   return (
-    <div
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onClick={handleClick}
-      className={`cursor-pointer rounded-2xl border-2 border-dashed p-12 text-center transition-all
-        ${dragging
-          ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/30 scale-[1.02]'
-          : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800/50'
-        }`}
-    >
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".html"
-        multiple
-        className="hidden"
-        onChange={handleFileChange}
-      />
+    <>
+      <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onClick={handleClick}
+        className={`cursor-pointer rounded-2xl border-2 border-dashed p-12 text-center transition-all
+          ${dragging
+            ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/30 scale-[1.02]'
+            : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+          }`}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".html"
+          multiple
+          className="hidden"
+          onChange={handleFileChange}
+        />
 
-      <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
-        <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-        </svg>
-      </div>
+        <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+          <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+        </div>
 
-      <p className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">
-        {dragging ? 'Drop files here' : 'Drag & drop HTML chat files'}
-      </p>
-      <p className="text-sm text-gray-500 dark:text-gray-400">
-        or click to browse • Accepts .html files from SharePoint
-      </p>
-      {status && (
-        <p className="mt-3 text-sm font-medium text-blue-600 dark:text-blue-400">
-          {status}
+        <p className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">
+          {dragging ? 'Drop files here' : 'Drag & drop HTML chat files'}
         </p>
-      )}
-    </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          or click to browse • Accepts .html files from SharePoint
+        </p>
+        {status && (
+          <p className="mt-3 text-sm font-medium text-blue-600 dark:text-blue-400">
+            {status}
+          </p>
+        )}
+      </div>
+      {duplicateDialog}
+    </>
   );
 }
