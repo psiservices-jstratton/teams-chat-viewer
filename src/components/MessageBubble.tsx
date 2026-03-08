@@ -76,7 +76,7 @@ export function MessageBubble({ message, senderColor, prevSender }: MessageBubbl
           }}
         >
           {/* Content is parsed from user-uploaded local HTML files, not from external sources */}
-          <span dangerouslySetInnerHTML={{ __html: processedContent }} />
+          <div dangerouslySetInnerHTML={{ __html: processedContent }} />
         </div>
 
         {lightboxSrc && (
