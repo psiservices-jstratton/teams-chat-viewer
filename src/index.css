@@ -1,6 +1,47 @@
 @import "tailwindcss";
+@import "highlight.js/styles/github.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Dark mode: override highlight.js theme */
+.dark .hljs {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+.dark .hljs-string { color: #a5d6ff; }
+.dark .hljs-number { color: #79c0ff; }
+.dark .hljs-literal,
+.dark .hljs-keyword { color: #ff7b72; }
+.dark .hljs-attr { color: #d2a8ff; }
+.dark .hljs-built_in { color: #ffa657; }
+.dark .hljs-comment { color: #8b949e; }
+.dark .hljs-tag { color: #7ee787; }
+.dark .hljs-name { color: #7ee787; }
+.dark .hljs-attribute { color: #79c0ff; }
+
+/* Code block styling */
+pre.code-block {
+  margin: 0.5rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  background: #f6f8fa;
+  border: 1px solid #d1d5db;
+}
+
+.dark pre.code-block {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+pre.code-block code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+}
 
 html, body, #root {
   height: 100%;

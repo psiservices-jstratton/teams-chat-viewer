@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Message } from '../types';
 import { ImageLightbox } from './ImageLightbox';
+import { highlightCodeBlocks } from '../lib/codeDetector';
 
 interface MessageBubbleProps {
   message: Message;
@@ -28,6 +29,7 @@ function formatTime(iso: string): string {
 export function MessageBubble({ message, senderColor, prevSender }: MessageBubbleProps) {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const showHeader = message.sender !== prevSender;
+  const processedContent = useMemo(() => highlightCodeBlocks(message.content), [message.content]);
 
   return (
     <div className={`flex gap-3 px-4 ${showHeader ? 'mt-4' : 'mt-0.5'}`}>
@@ -74,7 +76,7 @@ export function MessageBubble({ message, senderColor, prevSender }: MessageBubbl
           }}
         >
           {/* Content is parsed from user-uploaded local HTML files, not from external sources */}
-          <span dangerouslySetInnerHTML={{ __html: message.content }} />
+          <span dangerouslySetInnerHTML={{ __html: processedContent }} />
         </div>
 
         {lightboxSrc && (
