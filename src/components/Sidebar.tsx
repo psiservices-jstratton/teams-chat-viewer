@@ -54,6 +54,7 @@ export function Sidebar({ conversations, selectedId, onSelect, onDelete, onRenam
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [dragOverPosition, setDragOverPosition] = useState<'above' | 'below'>('below');
   const draggedIdRef = useRef<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     if (editingId) editInputRef.current?.focus();
@@ -231,7 +232,7 @@ export function Sidebar({ conversations, selectedId, onSelect, onDelete, onRenam
             <button
               onClick={e => {
                 e.stopPropagation();
-                onDelete(conv.id);
+                setDeleteConfirmId(conv.id);
               }}
               className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-500 transition-all"
               title="Delete conversation"
@@ -333,6 +334,41 @@ export function Sidebar({ conversations, selectedId, onSelect, onDelete, onRenam
           unpinnedConversations.map(conv => renderConversationItem(conv, false))
         )}
       </div>
+
+      {/* Delete confirmation modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setDeleteConfirmId(null)}>
+          <div
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-5 mx-4 max-w-sm w-full"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Delete conversation?</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-5">
+              This will permanently remove <span className="font-medium text-gray-900 dark:text-gray-200">
+                {conversations.find(c => c.id === deleteConfirmId)?.title ?? 'this conversation'}
+              </span> and all its messages. This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600
+                  text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  onDelete(deleteConfirmId);
+                  setDeleteConfirmId(null);
+                }}
+                className="px-3 py-1.5 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
