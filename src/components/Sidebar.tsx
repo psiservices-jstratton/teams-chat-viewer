@@ -55,6 +55,7 @@ export function Sidebar({ conversations, selectedId, onSelect, onDelete, onRenam
   const [dragOverPosition, setDragOverPosition] = useState<'above' | 'below'>('below');
   const draggedIdRef = useRef<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [sortMode, setSortMode] = useState<'default' | 'newest' | 'oldest'>('default');
 
   useEffect(() => {
     if (editingId) editInputRef.current?.focus();
@@ -92,7 +93,16 @@ export function Sidebar({ conversations, selectedId, onSelect, onDelete, onRenam
     .filter(c => c.isPinned)
     .sort((a, b) => (a.pinOrder ?? 0) - (b.pinOrder ?? 0));
 
-  const unpinnedConversations = filtered.filter(c => !c.isPinned);
+  const unpinnedConversations = (() => {
+    const unpinned = filtered.filter(c => !c.isPinned);
+    if (sortMode === 'default') return unpinned;
+
+    return [...unpinned].sort((a, b) => {
+      const aTime = a.messages.length > 0 ? new Date(a.messages[a.messages.length - 1].timestamp).getTime() : 0;
+      const bTime = b.messages.length > 0 ? new Date(b.messages[b.messages.length - 1].timestamp).getTime() : 0;
+      return sortMode === 'newest' ? bTime - aTime : aTime - bTime;
+    });
+  })();
 
   const handleDragStart = (e: React.DragEvent, id: string) => {
     draggedIdRef.current = id;
@@ -267,24 +277,49 @@ export function Sidebar({ conversations, selectedId, onSelect, onDelete, onRenam
 
   return (
     <div className="flex flex-col min-h-0 flex-1">
-      {/* Search */}
+      {/* Search and Sort */}
       <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-        <div className="relative">
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search chats..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-10 pr-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm
+                text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400
+                focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <button
+            onClick={() => setSortMode(prev => prev === 'default' ? 'newest' : prev === 'newest' ? 'oldest' : 'default')}
+            className={`flex-shrink-0 p-2 rounded-lg transition-colors ${
+              sortMode !== 'default'
+                ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+            title={sortMode === 'default' ? 'Sort by date' : sortMode === 'newest' ? 'Newest first' : 'Oldest first'}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="text"
-            placeholder="Search chats..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm
-              text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400
-              focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+            {sortMode === 'default' ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+              </svg>
+            ) : sortMode === 'newest' ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
+            )}
+          </button>
         </div>
       </div>
 
