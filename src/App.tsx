@@ -89,7 +89,11 @@ export default function App() {
   }, []);
 
   const handleExport = useCallback(async () => {
-    await exportArchive();
+    try {
+      await exportArchive();
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Failed to export archive. Please try again.');
+    }
   }, []);
 
   const handleImportArchive = useCallback(async (file: File) => {
@@ -100,6 +104,9 @@ export default function App() {
       await importArchive(file, setImportProgress);
       const convs = await getAllConversations();
       setConversations(convs);
+      if (convs.length > 0 && !selectedId) {
+        setSelectedId(convs[0].id);
+      }
       // Apply imported theme
       applyTheme(getStoredTheme());
     } catch (err) {
@@ -108,7 +115,7 @@ export default function App() {
       setImporting(false);
       setImportProgress(null);
     }
-  }, []);
+  }, [selectedId]);
 
   const handleDismissWhatsNew = useCallback(() => {
     setShowWhatsNew(false);
