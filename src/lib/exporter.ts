@@ -1,4 +1,5 @@
 import { getAllConversations, addConversation } from './db';
+import { STORAGE_KEY } from './theme';
 import type { Conversation } from '../types';
 
 interface ExportEnvelope {
@@ -16,7 +17,7 @@ export async function exportArchive(): Promise<void> {
     version: 1,
     exportedAt: new Date().toISOString(),
     preferences: {
-      theme: localStorage.getItem('teams-chat-viewer-theme') || 'light',
+      theme: localStorage.getItem(STORAGE_KEY) || 'light',
     },
     conversations,
   };
@@ -32,7 +33,7 @@ export async function exportArchive(): Promise<void> {
   a.href = url;
   a.download = `chat-archive-${date}.tcv`;
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 export interface ImportProgress {
@@ -85,7 +86,7 @@ export async function importArchive(
 
   // Restore preferences
   if (envelope.preferences?.theme) {
-    localStorage.setItem('teams-chat-viewer-theme', envelope.preferences.theme);
+    localStorage.setItem(STORAGE_KEY, envelope.preferences.theme);
   }
 
   return total;

@@ -1,6 +1,6 @@
 type Theme = 'light' | 'dark';
 
-const STORAGE_KEY = 'teams-chat-viewer-theme';
+export const STORAGE_KEY = 'teams-chat-viewer-theme';
 
 export function getStoredTheme(): Theme {
   const stored = localStorage.getItem(STORAGE_KEY);
