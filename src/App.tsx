@@ -7,11 +7,22 @@ import { ChatView } from './components/ChatView';
 import { UploadArea } from './components/UploadArea';
 import { EmptyState } from './components/EmptyState';
 import { ThemeToggle } from './components/ThemeToggle';
+import { SettingsMenu } from './components/SettingsMenu';
+import { WhatsNewBanner } from './components/WhatsNewBanner';
+import { NotificationBell } from './components/NotificationBell';
+import { exportArchive, importArchive } from './lib/exporter';
+import type { ImportProgress } from './lib/exporter';
 
 export default function App() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [showWhatsNew, setShowWhatsNew] = useState(
+    () => !localStorage.getItem('teams-chat-viewer-seen-whats-new-v1')
+  );
 
   useEffect(() => {
     applyTheme(getStoredTheme());
@@ -77,13 +88,40 @@ export default function App() {
     setConversations(convs);
   }, []);
 
+  const handleExport = useCallback(async () => {
+    await exportArchive();
+  }, []);
+
+  const handleImportArchive = useCallback(async (file: File) => {
+    setImporting(true);
+    setImportProgress(null);
+    setImportError(null);
+    try {
+      await importArchive(file, setImportProgress);
+      const convs = await getAllConversations();
+      setConversations(convs);
+      // Apply imported theme
+      applyTheme(getStoredTheme());
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Failed to import conversations. Please try again.');
+    } finally {
+      setImporting(false);
+      setImportProgress(null);
+    }
+  }, []);
+
+  const handleDismissWhatsNew = useCallback(() => {
+    setShowWhatsNew(false);
+    localStorage.setItem('teams-chat-viewer-seen-whats-new-v1', '1');
+  }, []);
+
   const selected = conversations.find(c => c.id === selectedId) || null;
 
   return (
     <div className="h-full flex bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans">
       {/* Sidebar */}
       <div
-        className={`flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col transition-all
+        className={`flex-shrink-0 relative border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col transition-all
           ${sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'}`}
       >
         {/* Sidebar header */}
@@ -96,7 +134,15 @@ export default function App() {
             </svg>
             Chat Archive
           </h1>
-          <ThemeToggle />
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <SettingsMenu
+              onExport={handleExport}
+              onImport={handleImportArchive}
+              exportDisabled={conversations.length === 0}
+              importDisabled={importing}
+            />
+          </div>
         </div>
 
         {/* Upload area (compact) */}
@@ -113,6 +159,19 @@ export default function App() {
           onUnpin={handleUnpin}
           onReorderPinned={handleReorderPinned}
         />
+        {importing && (
+          <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 flex flex-col items-center justify-center z-40">
+            <svg className="w-8 h-8 text-blue-500 animate-spin mb-3" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {importProgress
+                ? `Importing... ${importProgress.current} of ${importProgress.total} conversations`
+                : 'Preparing import...'}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Mobile sidebar toggle */}
@@ -127,12 +186,34 @@ export default function App() {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex justify-end px-4 py-2">
+          <NotificationBell onClick={() => setShowWhatsNew(true)} />
+        </div>
         {selected ? (
           <ChatView conversation={selected} onRenameParticipant={handleRenameParticipant} />
         ) : (
           <EmptyState onUploadComplete={handleUploadComplete} />
         )}
       </div>
+
+      {importError && (
+        <div className="fixed bottom-4 right-4 z-50 max-w-sm bg-red-600 text-white rounded-lg shadow-lg px-4 py-3 flex items-start gap-3">
+          <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="text-sm flex-1">{importError}</p>
+          <button
+            onClick={() => setImportError(null)}
+            className="flex-shrink-0 p-1 rounded hover:bg-red-500 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {showWhatsNew && <WhatsNewBanner onDismiss={handleDismissWhatsNew} />}
     </div>
   );
 }
